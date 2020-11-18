@@ -26,7 +26,8 @@ class Customer(TimeStampedModel):
         (CURRENT, 'current')
     )
 
-    user = models.OneToOneField(User, on_delete=models.PROTECT)
+    user = models.OneToOneField(User, on_delete=models.PROTECT, related_name='customer')
+    customer_id = models.CharField(unique=True, max_length=20)
     account_number = models.CharField(max_length=20, unique=True)
     account_type = models.CharField(choices=ACCOUNT_TYPE, default=SAVING)
     current_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
@@ -44,3 +45,4 @@ class Transactions(TimeStampedModel):
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT)
     transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPE)
     amount = models.DecimalField(max_digits=20, decimal_places=2)
+    transaction_id = models.CharField(max_length=20, unique=True)
