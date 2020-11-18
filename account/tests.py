@@ -1,5 +1,5 @@
 from django.test import TestCase
-from account.utils import BankAccountTransactions
+from account.api.utils import BankAccountTransactions
 from account.models import Customer
 
 
