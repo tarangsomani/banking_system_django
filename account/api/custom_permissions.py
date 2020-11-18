@@ -4,7 +4,7 @@ from account.models import User
 
 class IsManager(BasePermission):
     """
-    Allows access only to authenticated users.
+    Allows access only to authenticated Managers.
     """
 
     def has_permission(self, request, view):
@@ -13,7 +13,7 @@ class IsManager(BasePermission):
 
 class IsCustomer(BasePermission):
     """
-    Allows access only to authenticated users.
+    Allows access only to authenticated Customers.
     """
 
     def has_permission(self, request, view):
