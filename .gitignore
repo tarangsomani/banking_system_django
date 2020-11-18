@@ -1,0 +1,16 @@
+# SDK files
+.idea
+*.pyc
+
+#Virtual Env
+oxobus_env/
+
+!*/migrations/__init__.py
+.idea
+*/__pycache__
+*.pyc
+*/migrations/*.py
+.DS_Store
+static/
+
+*.sqlite3
