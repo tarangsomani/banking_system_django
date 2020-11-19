@@ -8,7 +8,7 @@ class IsManager(BasePermission):
     """
 
     def has_permission(self, request, view):
-        return bool(request.user.user_type == User.MANAGER)
+        return bool(request.user.user.user_type == User.MANAGER)
 
 
 class IsCustomer(BasePermission):
@@ -17,4 +17,5 @@ class IsCustomer(BasePermission):
     """
 
     def has_permission(self, request, view):
-        return bool(request.user.user_type == User.CUSTOMER)
+        return bool(request.user.user.user_type == User.CUSTOMER)
+

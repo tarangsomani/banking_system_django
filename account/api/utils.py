@@ -1,4 +1,4 @@
-from account.models import Customer
+from account.models import User, Customer
 
 
 class BankAccountTransactions():
@@ -7,33 +7,29 @@ class BankAccountTransactions():
             self.amount = int(amount)
         except:
             raise ValueError('Bad input for amount')
+
         self.customer = customer
+        if not isinstance(customer, Customer):
+            raise ValueError('')
 
-    @classmethod
-    def deposit_amount(cls):
-        customer = cls.customer
-        amount = cls.amount
-        try:
-            customer.current_balance += int(amount)
-            customer.save()
-            return True
-        except ValueError:
-            raise ValueError
+    def deposit_amount(self):
+        customer = self.customer
+        amount = self.amount
+        customer.current_balance += amount
+        customer.save()
+        return True
 
-    @classmethod
-    def withdraw_amount(cls):
+    def withdraw_amount(self):
         # Add a check for min amount while withdrawal
-        customer = cls.customer
-        amount = cls.amount
+        customer = self.customer
+        amount = self.amount
+        print(customer.current_balance, amount)
 
         current_balance = customer.current_balance
-        try:
-            amount = int(amount)
-        except ValueError:
-            raise ValueError
 
         if current_balance >= amount:
             customer.current_balance -= amount
             customer.save()
             return True
         return False
+
