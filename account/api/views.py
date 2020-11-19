@@ -6,23 +6,27 @@ from rest_framework.authtoken.models import Token
 from utils.restful_response import send_response
 from utils.responses import *
 from django.contrib.auth.hashers import check_password
-from .serializers import UserSerializer, UserDetailSerializer, TransactionSerializer, CustomerSerializer
-from account.models import User, Customer, Transactions
+from .serializers import UserSerializer, UserDetailSerializer, TransactionSerializer, AccountSerializer
+from account.models import User, Account, Transactions
 from utils.custom_permissions import IsManager, IsCustomer
 from .utils import BankAccountTransactions
 import uuid
+from django.db import transaction
 
 
 class CustomerSignUpAPIView(generics.CreateAPIView):
+    """
+    Not allowing Users (Managers) to sign up using this as there would be some other functionality for Manager Account.
+    """
 
     serializer_class = UserSerializer
 
     def create(self, request, *args, **kwargs):
         email = request.data.get('email', None)
-        user_exists = User.objects.filter(email=email).first()
+        user_exists = User.objects.filter(email=email).exists()
         if user_exists:
-            return send_response(response_code=RESPONSE_CODES['FAILURE'], developer_message='Request failed.',
-                                 ui_message='User already exists', status=status.HTTP_200_OK)
+            return send_response(response_code=RESPONSE_CODES['FAILURE'], status=status.HTTP_400_BAD_REQUEST,
+                                 developer_message='Request failed.', ui_message='User already exists')
 
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
@@ -33,11 +37,16 @@ class CustomerSignUpAPIView(generics.CreateAPIView):
             return send_response(response_code=RESPONSE_CODES['SUCCESS'], developer_message='Request was successful.',
                                  data=data, status=status.HTTP_200_OK)
 
-        return send_response(response_code=RESPONSE_CODES['FAILURE'], developer_message='Request failed.',
-                             ui_message='Invalid data', error=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return send_response(response_code=RESPONSE_CODES['FAILURE'], status=status.HTTP_400_BAD_REQUEST,
+                             developer_message='Request failed.', ui_message='Invalid data', error=serializer.errors)
 
 
 class LoginAPIView(generics.UpdateAPIView):
+
+    """
+    Same Login View for Customers and Managers. But in actual application it would be different views
+    based on the requirement.
+    """
     serializer_class = UserDetailSerializer
     queryset = User.objects.all()
 
@@ -50,19 +59,19 @@ class LoginAPIView(generics.UpdateAPIView):
             auth_token = Token.objects.get(user=user).key
 
             if not check_password(password, user.password) or (user.user_type != request.data.get('user_type')):
-                return send_response(response_code=RESPONSE_CODES['FAILURE'], developer_message='Request failed.',
-                                     ui_message='Wrong username or password', status=status.HTTP_401_UNAUTHORIZED)
+                return send_response(response_code=RESPONSE_CODES['FAILURE'], status=status.HTTP_401_UNAUTHORIZED,
+                                     developer_message='Request failed.', ui_message='Wrong username or password')
 
         except:
-            return send_response(response_code=RESPONSE_CODES['FAILURE'], developer_message='Request failed.',
-                                 ui_message='Wrong username or password', status=status.HTTP_401_UNAUTHORIZED)
+            return send_response(response_code=RESPONSE_CODES['FAILURE'], status=status.HTTP_401_UNAUTHORIZED,
+                                 developer_message='Request failed.', ui_message='Wrong username or password')
 
         user.is_active = True
         user.save()
         data = self.get_serializer(instance=user).data
         data['token'] = auth_token
-        return send_response(response_code=RESPONSE_CODES['SUCCESS'],
-                             developer_message='Request was successful.', data=data, status=status.HTTP_200_OK)
+        return send_response(response_code=RESPONSE_CODES['SUCCESS'], status=status.HTTP_200_OK,
+                             developer_message='Request was successful.', data=data)
 
 
 class CustomerDepositMoneyView(generics.CreateAPIView):
@@ -70,64 +79,72 @@ class CustomerDepositMoneyView(generics.CreateAPIView):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated, IsCustomer)
 
+    # Atomic Transaction
+    @transaction.atomic
     def create(self, request, *args, **kwargs):
-        customer = request.user.user.customer
+        user = request.user.user
+        # Acquiring the lock on the related account to avoid concurrency
+        account = Account.objects.select_for_update().get(user=user)
         amount = request.data.get('amount')
 
         # Creating a Transaction History
         serializer = TransactionSerializer(data=request.data)
         if serializer.is_valid():
             try:
-                deposit_amount = BankAccountTransactions(customer, amount).deposit_amount()
+                deposit_amount = BankAccountTransactions(account, amount).deposit_amount()
             except:
-                return send_response(response_code=RESPONSE_CODES['FAILURE'], developer_message='Request failed.',
-                                     ui_message='Max Value for Account Balance Exceeded!', status=status.HTTP_400_BAD_REQUEST)
-            instance = serializer.save(customer=customer, transaction_id=uuid.uuid4(), transaction_type=Transactions.CREDIT)
-            return send_response(response_code=RESPONSE_CODES['SUCCESS'],
-                                 developer_message='Request was successful.', data=serializer.data,
-                                 status=status.HTTP_200_OK)
+                return send_response(response_code=RESPONSE_CODES['FAILURE'], status=status.HTTP_400_BAD_REQUEST,
+                                     developer_message='Request failed.',
+                                     ui_message='Max Value for Account Balance Exceeded!')
+            instance = serializer.save(account=account, transaction_id=uuid.uuid4(), transaction_type=Transactions.CREDIT)
+            return send_response(response_code=RESPONSE_CODES['SUCCESS'], status=status.HTTP_200_OK,
+                                 developer_message='Request was successful.', data=serializer.data)
 
-        return send_response(response_code=RESPONSE_CODES['FAILURE'], developer_message='Request failed.',
-                             ui_message='Bad Data.', status=status.HTTP_400_BAD_REQUEST)
+        return send_response(response_code=RESPONSE_CODES['FAILURE'], status=status.HTTP_400_BAD_REQUEST,
+                             developer_message='Request failed.', ui_message='Bad Data.')
 
 
 class CustomerWithdrawMoneyView(generics.CreateAPIView):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated, IsCustomer)
 
+    @transaction.atomic
     def create(self, request, *args, **kwargs):
-        customer = request.user.user.customer
+        user = request.user.user
+        # Acquiring the lock on the related account to avoid concurrency
+        account = Account.objects.select_for_update().get(user=user)
         amount = request.data.get('amount')
         serializer = TransactionSerializer(data=request.data)
         if serializer.is_valid():
-            withdraw_amount = BankAccountTransactions(customer, amount).withdraw_amount()
+            withdraw_amount = BankAccountTransactions(account, amount).withdraw_amount()
             if withdraw_amount:
-                instance = serializer.save(customer=customer, transaction_id=uuid.uuid4(), transaction_type=Transactions.DEBIT)
-                return send_response(response_code=RESPONSE_CODES['SUCCESS'],
-                                     developer_message='Request was successful.', data=serializer.data, status=status.HTTP_200_OK)
+                instance = serializer.save(account=account, transaction_id=uuid.uuid4(), transaction_type=Transactions.DEBIT)
+                return send_response(response_code=RESPONSE_CODES['SUCCESS'], status=status.HTTP_200_OK,
+                                     developer_message='Request was successful.', data=serializer.data)
 
-            return send_response(response_code=RESPONSE_CODES['FAILURE'], developer_message='Request failed.',
-                                 ui_message='Insufficient Balance', status=status.HTTP_200_OK)
+            return send_response(response_code=RESPONSE_CODES['FAILURE'], status=status.HTTP_200_OK,
+                                 developer_message='Request failed.', ui_message='Insufficient Balance')
 
-        return send_response(response_code=RESPONSE_CODES['FAILURE'], developer_message='Request failed.',
-                             ui_message='Bad Data.', status=status.HTTP_400_BAD_REQUEST)
+        return send_response(response_code=RESPONSE_CODES['FAILURE'], status=status.HTTP_400_BAD_REQUEST,
+                             developer_message='Request failed.', ui_message='Bad Data.')
 
 
 class CustomerAccountDetailsView(generics.RetrieveAPIView):
 
-    queryset = Customer.objects.all()
-    serializer_class = CustomerSerializer
+    serializer_class = AccountSerializer
     permission_classes = (IsAuthenticated, IsCustomer)
     authentication_classes = (TokenAuthentication,)
 
     def retrieve(self, request, *args, **kwargs):
         try:
             user = request.user.user
-            instance = self.queryset.get(user=user)
+            instance = Account.objects.get(user=user)
         except:
-            return send_response(response_code=RESPONSE_CODES['FAILURE'], developer_message='Request failed.',
-                                 ui_message='The user_id you\'re trying to access does not exist', status=status.HTTP_400_BAD_REQUEST)
+            return send_response(response_code=RESPONSE_CODES['FAILURE'], status=status.HTTP_400_BAD_REQUEST,
+                                 developer_message='Request failed.',
+                                 ui_message='The user_id you\'re trying to access does not exist')
 
         serializer = self.get_serializer(instance)
-        return send_response(response_code=RESPONSE_CODES['SUCCESS'], developer_message='Request was successful.',
-                             data=serializer.data, status=status.HTTP_200_OK)
+        return send_response(response_code=RESPONSE_CODES['SUCCESS'], status=status.HTTP_200_OK,
+                             developer_message='Request was successful.', data=serializer.data)
+

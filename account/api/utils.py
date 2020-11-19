@@ -1,9 +1,9 @@
-from account.models import User, Customer
+from account.models import User, Account
 from decimal import Decimal
 
 
 class BankAccountTransactions():
-    def __init__(self, customer, amount):
+    def __init__(self, account, amount):
         try:
             self.amount = Decimal(amount)
             if self.amount <= 10:
@@ -13,32 +13,32 @@ class BankAccountTransactions():
         except:
             raise ValueError('Bad input for amount')
 
-        self.customer = customer
-        if not isinstance(customer, Customer):
+        self.account = account
+        if not isinstance(account, Account):
             raise ValueError('')
 
     def deposit_amount(self):
 
-        customer = self.customer
+        account = self.account
         amount = self.amount
-        new_balance = customer.current_balance + amount
+        new_balance = account.current_balance + amount
         if new_balance > 99999999.99:
             raise ValueError('Max Value exceeded')
 
-        customer.current_balance += amount
-        customer.save()
+        account.current_balance += amount
+        account.save()
         return True
 
     def withdraw_amount(self):
         # Add a check for min amount while withdrawal
-        customer = self.customer
+        account = self.account
         amount = self.amount
 
-        current_balance = customer.current_balance
+        current_balance = account.current_balance
 
         if current_balance >= amount:
-            customer.current_balance -= amount
-            customer.save()
+            account.current_balance -= amount
+            account.save()
             return True
         return False
 

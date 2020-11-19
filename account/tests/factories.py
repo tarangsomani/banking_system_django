@@ -22,15 +22,15 @@ class UserFactory(factory.django.DjangoModelFactory):
     user_type = 'customer'
 
 
-class CustomerFactory(factory.django.DjangoModelFactory):
+class AccountFactory(factory.django.DjangoModelFactory):
 
     class Meta:
-        model = 'account.Customer'
-        django_get_or_create = ('account_number', 'account_type', 'current_balance', 'customer_id', 'user')
+        model = 'account.Account'
+        django_get_or_create = ('account_number', 'account_type', 'current_balance', 'account_id', 'user')
 
     account_number = '12222211111'
     account_type = 'saving'
-    customer_id = '212121'
+    account_id = '212121'
     current_balance = 0
     user = factory.SubFactory(UserFactory)
 
