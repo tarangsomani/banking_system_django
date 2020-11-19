@@ -5,10 +5,10 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from utils.restful_response import send_response
 from utils.responses import *
-from django.contrib.auth.hashers import make_password, check_password
-from .serializers import UserSerializer, UserDetailSerializer, TransactionSerializer
+from django.contrib.auth.hashers import check_password
+from .serializers import UserSerializer, UserDetailSerializer, TransactionSerializer, CustomerSerializer
 from account.models import User, Customer, Transactions
-from .custom_permissions import IsManager, IsCustomer
+from utils.custom_permissions import IsManager, IsCustomer
 from .utils import BankAccountTransactions
 import uuid
 
@@ -100,10 +100,30 @@ class CustomerWithdrawMoneyView(generics.CreateAPIView):
             if withdraw_amount:
                 instance = serializer.save(customer=customer, transaction_id=uuid.uuid4(), transaction_type=Transactions.DEBIT)
                 return send_response(response_code=RESPONSE_CODES['SUCCESS'],
-                                     developer_message='Request was successful.', data=serializer.data)
+                                     developer_message='Request was successful.', data=serializer.data, status=status.HTTP_200_OK)
+
             return send_response(response_code=RESPONSE_CODES['FAILURE'], developer_message='Request failed.',
                                  ui_message='Insufficient Balance', status=status.HTTP_200_OK)
 
         return send_response(response_code=RESPONSE_CODES['FAILURE'], developer_message='Request failed.',
                              ui_message='Bad Data.', status=status.HTTP_400_BAD_REQUEST)
 
+
+class CustomerAccountDetailsView(generics.RetrieveAPIView):
+
+    queryset = Customer.objects.all()
+    serializer_class = CustomerSerializer
+    permission_classes = (IsAuthenticated, IsCustomer)
+    authentication_classes = (TokenAuthentication,)
+
+    def retrieve(self, request, *args, **kwargs):
+        try:
+            user = request.user.user
+            instance = self.queryset.get(user=user)
+        except:
+            return send_response(response_code=RESPONSE_CODES['FAILURE'], developer_message='Request failed.',
+                                 ui_message='The user_id you\'re trying to access does not exist', status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = self.get_serializer(instance)
+        return send_response(response_code=RESPONSE_CODES['SUCCESS'], developer_message='Request was successful.',
+                             data=serializer.data, status=status.HTTP_200_OK)

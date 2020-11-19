@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from account.models import User, Customer, Transactions
 import uuid
-from django.contrib.auth.hashers import make_password, check_password
+from django.contrib.auth.hashers import make_password
 from django.utils.crypto import get_random_string
 
 
@@ -34,7 +34,7 @@ class CustomerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Customer
-        fields = ('account_number', 'account_type', 'current_balance')
+        fields = ('account_number', 'account_type', 'current_balance', 'customer_id')
 
 
 class TransactionSerializer(serializers.ModelSerializer):

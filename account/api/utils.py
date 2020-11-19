@@ -23,7 +23,6 @@ class BankAccountTransactions():
         # Add a check for min amount while withdrawal
         customer = self.customer
         amount = self.amount
-        print(customer.current_balance, amount)
 
         current_balance = customer.current_balance
 
