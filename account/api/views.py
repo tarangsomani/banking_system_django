@@ -77,7 +77,11 @@ class CustomerDepositMoneyView(generics.CreateAPIView):
         # Creating a Transaction History
         serializer = TransactionSerializer(data=request.data)
         if serializer.is_valid():
-            deposit_amount = BankAccountTransactions(customer, amount).deposit_amount()
+            try:
+                deposit_amount = BankAccountTransactions(customer, amount).deposit_amount()
+            except:
+                return send_response(response_code=RESPONSE_CODES['FAILURE'], developer_message='Request failed.',
+                                     ui_message='Max Value for Account Balance Exceeded!', status=status.HTTP_400_BAD_REQUEST)
             instance = serializer.save(customer=customer, transaction_id=uuid.uuid4(), transaction_type=Transactions.CREDIT)
             return send_response(response_code=RESPONSE_CODES['SUCCESS'],
                                  developer_message='Request was successful.', data=serializer.data,

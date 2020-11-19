@@ -1,4 +1,5 @@
 from django.db import models
+from django.db import IntegrityError
 from utils.models import TimeStampedModel
 from django.contrib.auth.models import User as DjangoUser
 
@@ -46,3 +47,9 @@ class Transactions(TimeStampedModel):
     transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPE)
     amount = models.DecimalField(max_digits=20, decimal_places=2)
     transaction_id = models.CharField(max_length=20, unique=True)
+
+    def save(self, *args, **kwargs):
+        if self.id is None:
+            super(Transactions, self).save(*args, **kwargs)
+        else:
+            raise IntegrityError('This model instance cannot be updated')
