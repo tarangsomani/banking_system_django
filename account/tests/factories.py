@@ -2,6 +2,8 @@ import factory
 from account.models import User
 from rest_framework.authtoken.models import Token
 from faker import Factory
+import uuid
+
 
 faker = Factory.create()
 
@@ -28,9 +30,9 @@ class AccountFactory(factory.django.DjangoModelFactory):
         model = 'account.Account'
         django_get_or_create = ('account_number', 'account_type', 'current_balance', 'account_id', 'user')
 
-    account_number = '12222211111'
+    account_number = faker.pyint()
     account_type = 'saving'
-    account_id = '212121'
+    account_id = uuid.uuid4()
     current_balance = 0
     user = factory.SubFactory(UserFactory)
 

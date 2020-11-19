@@ -14,12 +14,12 @@ class TestBankAccountTransactions(TestCase):
     # Test Case where amount cannot be a string
     def test_bad_input_for_amount(self):
         with self.assertRaises(ValueError):
-            BankAccountTransactions('account', Faker().word())
+            BankAccountTransactions(self.account, Faker().word())
 
     # Test Case where we used invalid Customer Instance
     def test_invalid_customer_instance(self):
         with self.assertRaises(ValueError):
-            BankAccountTransactions('account', Faker().pyint())
+            BankAccountTransactions(None, Faker().pyint())
 
     # Test Case during withdrawal - Amount > Balance
     def test_withdrawal_amount_greater_than_balance(self):
@@ -30,30 +30,27 @@ class TestBankAccountTransactions(TestCase):
     # Test Case - Amount cannot be negative
     def test_negative_amount(self):
         with self.assertRaises(ValueError):
-            account = Account()
-            BankAccountTransactions(account, -1)
+            BankAccountTransactions(self.account, -1)
 
     # Test Case - Amount cannot be zero
     def test_zero_amount(self):
         with self.assertRaises(ValueError):
-            account = Account()
-            BankAccountTransactions(account, 0)
+            BankAccountTransactions(self.account, 0)
 
     # Test Case - Amount should be greater than minimum amount required for a transaction (min. required amount is 10 here)
     def test_min_amount(self):
         with self.assertRaises(ValueError):
-            account = Account()
-            BankAccountTransactions(account, 10)
+            BankAccountTransactions(self.account, 10)
 
     # Test Case - Amount cannot exceed 99999999
     def test_max_amount(self):
         with self.assertRaises(ValueError):
-            account = Account()
-            BankAccountTransactions(account, 100000000)
+            BankAccountTransactions(self.account, 100000000)
 
     # Test Case - Balance cannot exceed 99999999
     def test_max_account_balance_exceeded(self):
         with self.assertRaises(ValueError):
+            # This would raise a Value error as both these deposits would exceed the max limit
             deposit_1 = BankAccountTransactions(self.account, 99999999).deposit_amount()
             deposit_2 = BankAccountTransactions(self.account, 99999).deposit_amount()
 
