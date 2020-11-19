@@ -4,20 +4,22 @@ from django.urls import reverse
 from faker import Factory
 from .factories import UserFactory, AccountFactory, TokenFactory
 import random
+import json
+from decimal import Decimal
 
 factory = APIRequestFactory()
 client = APIClient()
 faker = Factory.create()
 
 
-class TestDepositAndWithdrawalAPIs(TestCase):
+class TestTransactionAPIs(TestCase):
 
     def setUp(self) -> None:
         self.account = AccountFactory()
         self.token = TokenFactory()
 
     # Test Case - CustomerDepositMoneyView
-    def test_deposit_amount_api(self):
+    def test_deposit_amount_view(self):
         """
         Performing action on CustomerDepositMoneyView - 2 times
         """
@@ -35,7 +37,7 @@ class TestDepositAndWithdrawalAPIs(TestCase):
         self.assertEqual(amount_1 + amount_2, self.account.current_balance)
 
     # Test Case - CustomerWithdrawMoneyView
-    def test_withdraw_amount_api(self):
+    def test_withdraw_amount_view(self):
         """
         Setting up initial balance to 100000
         And then withdrawing amount
@@ -51,7 +53,7 @@ class TestDepositAndWithdrawalAPIs(TestCase):
         self.assertEqual(100000-amount, self.account.current_balance)
 
     # Test Case - Deposit and Withdraw amount simultaneously and check integrity
-    def test_deposit_and_withdrawal_api_simultaneously(self):
+    def test_deposit_and_withdrawal_views_simultaneously(self):
         deposit_amount_url = reverse('customer_deposit')
         withdraw_amount_url = reverse('customer_withdraw')
         client.force_authenticate(user=self.account.user, token=self.token)
@@ -65,3 +67,12 @@ class TestDepositAndWithdrawalAPIs(TestCase):
         self.account.refresh_from_db()
 
         self.assertEqual(1100, self.account.current_balance)
+
+    # Test Case for CustomerAccountDetailsView
+    def test_account_details_view(self):
+        account_details_url = reverse('customer_account_details')
+        account = self.account
+        client.force_authenticate(user=account.user, token=self.token)
+        request = client.get(account_details_url)
+        self.assertEqual(200, request.status_code)
+
