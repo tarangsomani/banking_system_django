@@ -5,6 +5,13 @@ from django.contrib.auth.models import User as DjangoUser
 
 
 class User(DjangoUser, TimeStampedModel):
+
+    """
+    Assumption: - 2 Types of Users
+                - 10 Digit Mobile Number (India) [should be mandatory if required to send SMS, etc.
+                -
+    """
+
     MANAGER = 'manager'
     CUSTOMER = 'customer'
 
@@ -14,7 +21,7 @@ class User(DjangoUser, TimeStampedModel):
     )
 
     user_type = models.CharField(max_length=20, choices=USER_TYPE, default=CUSTOMER)
-    mobile = models.CharField(max_length=20, null=True)
+    mobile = models.CharField(max_length=10, null=True)
     branch_name = models.CharField(max_length=255, null=True)
 
 
