@@ -12,5 +12,6 @@ oxobus_env/
 */migrations/*.py
 .DS_Store
 static/
+*/.pytest_cache
 
 *.sqlite3
