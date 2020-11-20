@@ -10,8 +10,10 @@ from .serializers import UserSerializer, UserDetailSerializer, TransactionSerial
 from account.models import User, Account, Transactions
 from utils.custom_permissions import IsManager, IsCustomer
 from .utils import BankAccountTransactions
+from utils.sendgrid_integration import SendGridService
 import uuid
 from django.db import transaction
+from .constant import CREDIT_AMOUNT_EMAIL_BODY, DEBIT_AMOUNT_EMAIL_BODY
 
 
 class CustomerSignUpAPIView(generics.CreateAPIView):
@@ -97,6 +99,10 @@ class CustomerDepositMoneyView(generics.CreateAPIView):
                                      developer_message='Request failed.',
                                      ui_message='Max Value for Account Balance Exceeded!')
             instance = serializer.save(account=account, transaction_id=uuid.uuid4(), transaction_type=Transactions.CREDIT)
+
+            # Sending Transaction Email using Sendgrid
+            send_mail = SendGridService().send_mail(receiver=user.email, subject="CREDIT",
+                                                    content=CREDIT_AMOUNT_EMAIL_BODY % (amount, account.current_balance))
             return send_response(response_code=RESPONSE_CODES['SUCCESS'], status=status.HTTP_200_OK,
                                  developer_message='Request was successful.', data=serializer.data)
 
@@ -124,6 +130,10 @@ class CustomerWithdrawMoneyView(generics.CreateAPIView):
                                      ui_message='Negative Amount not allowed')
             if withdraw_amount:
                 instance = serializer.save(account=account, transaction_id=uuid.uuid4(), transaction_type=Transactions.DEBIT)
+                # Sending Transaction Email using Sendgrid
+                send_mail = SendGridService().send_mail(receiver=user.email, subject="DEBIT",
+                                                        content=DEBIT_AMOUNT_EMAIL_BODY %
+                                                        (amount, account.current_balance))
                 return send_response(response_code=RESPONSE_CODES['SUCCESS'], status=status.HTTP_200_OK,
                                      developer_message='Request was successful.', data=serializer.data)
 
