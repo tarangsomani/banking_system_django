@@ -34,6 +34,7 @@ class Account(TimeStampedModel):
     """
     Assumptions: - One user can have only one Account
                  - Account can be of two types
+                 - Current Balance max value can be 99999999.99 (can be modified in actual implementation)
                  - Current Balance is a Decimal Field - as it may be negative (after bank charges, etc.)
                  - Account Number would be random 16-digit number. But in practical scenario we would need to handle collisions
                    and Account Number may have some prefix.

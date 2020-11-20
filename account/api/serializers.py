@@ -18,6 +18,7 @@ class UserSerializer(serializers.ModelSerializer):
         account_type = validated_data.pop('account_type')
         instance = User.objects.create(**validated_data, password=password, user_type=User.CUSTOMER,
                                        username=validated_data.get('email'))
+
         """
         - Generating the related Account for user.
         - Account Number is a random string here but in actual application it would be based on some logic and also there
