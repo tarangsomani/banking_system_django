@@ -3,6 +3,10 @@ from decimal import Decimal
 
 
 class BankAccountTransactions():
+    """
+    Assumptions: - Amount cannot exceed 99999999.99
+                 - Min Amount = 10
+    """
     def __init__(self, account, amount):
         try:
             self.amount = Decimal(amount)
@@ -22,6 +26,7 @@ class BankAccountTransactions():
         account = self.account
         amount = self.amount
         new_balance = account.current_balance + amount
+        # Balance cannot exceed max value allowed
         if new_balance > 99999999.99:
             raise ValueError('Max Value exceeded')
 
