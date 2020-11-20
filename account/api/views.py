@@ -18,7 +18,8 @@ from .constant import CREDIT_AMOUNT_EMAIL_BODY, DEBIT_AMOUNT_EMAIL_BODY
 
 class CustomerSignUpAPIView(generics.CreateAPIView):
     """
-    Not allowing Users (Managers) to sign up using this as there would be some other functionality for Manager Account.
+    - Not allowing Users (Managers) to sign up using this as there would be some other functionality for Manager Account.
+    - We can also add permissions that only a Manager can access this View
     """
 
     serializer_class = UserSerializer
@@ -46,8 +47,9 @@ class CustomerSignUpAPIView(generics.CreateAPIView):
 class LoginAPIView(generics.UpdateAPIView):
 
     """
-    Same Login View for Customers and Managers. But in actual application it would be different views
-    based on the requirement.
+    - Same Login View for Customers and Managers. But in actual application it would be different views
+      based on the requirement.
+    - For now user can have only one token. But if we need to implement multi-device support then we can include Sessions
     """
     serializer_class = UserDetailSerializer
     queryset = User.objects.all()
