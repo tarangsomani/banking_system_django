@@ -13,7 +13,7 @@ import ast
 
 class GetTransactionHistoryView(generics.ListAPIView):
     authentication_classes = (TokenAuthentication,)
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, IsManager)
 
     def list(self, request, *args, **kwargs):
         try:
