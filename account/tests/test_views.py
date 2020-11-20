@@ -36,6 +36,14 @@ class TestTransactionAPIs(TestCase):
 
         self.assertEqual(amount_1 + amount_2, self.account.current_balance)
 
+    # Test Case - CustomerDepositMoneyView with negative amount
+    def test_deposit_amount_view_with_negative_amount(self):
+        client.force_authenticate(user=self.account.user, token=self.token)
+        url = reverse('customer_deposit')
+
+        request = client.post(url, {'amount': -500}, format='json')
+        self.assertEqual(400, request.status_code)
+
     # Test Case - CustomerWithdrawMoneyView
     def test_withdraw_amount_view(self):
         """
@@ -51,6 +59,24 @@ class TestTransactionAPIs(TestCase):
         request = client.post(url, {'amount': amount}, format='json')
         self.account.refresh_from_db()
         self.assertEqual(100000-amount, self.account.current_balance)
+
+    # Test Case - CustomerWithdrawMoneyView with negative amount
+    def test_withdraw_amount_view_with_negative_amount(self):
+        """
+        Setting up initial balance to 100000
+        And then withdrawing amount
+        """
+        self.account.current_balance = 100000
+        self.account.save()
+
+        client.force_authenticate(user=self.account.user, token=self.token)
+        url = reverse('customer_withdraw')
+        request = client.post(url, {'amount': -100}, format='json')
+        self.assertEqual(400, request.status_code)
+
+    # Test Case - CustomerWithdrawMoneyView with invalid amount (string, etc.)
+    def test_withdraw_amount_view_with_bad_input_for_amount(self):
+        pass
 
     # Test Case - Deposit and Withdraw amount simultaneously and check integrity
     def test_deposit_and_withdrawal_views_simultaneously(self):

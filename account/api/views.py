@@ -116,7 +116,12 @@ class CustomerWithdrawMoneyView(generics.CreateAPIView):
         amount = request.data.get('amount')
         serializer = TransactionSerializer(data=request.data)
         if serializer.is_valid():
-            withdraw_amount = BankAccountTransactions(account, amount).withdraw_amount()
+            try:
+                withdraw_amount = BankAccountTransactions(account, amount).withdraw_amount()
+            except:
+                return send_response(response_code=RESPONSE_CODES['FAILURE'], status=status.HTTP_400_BAD_REQUEST,
+                                     developer_message='Request failed.',
+                                     ui_message='Negative Amount not allowed')
             if withdraw_amount:
                 instance = serializer.save(account=account, transaction_id=uuid.uuid4(), transaction_type=Transactions.DEBIT)
                 return send_response(response_code=RESPONSE_CODES['SUCCESS'], status=status.HTTP_200_OK,
